@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>選挙で勝とう オンライン</title>
+<style>
+:root{--bg:#f3f1ec;--panel:#fff;--ink:#1f2328;--sub:#667085;--line:#e3e0d8;--accent:#c62828;--gold:#b8860b;--sea:#dbe9f4}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;font-size:14px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;color:var(--ink)}
+button:hover:not(:disabled){border-color:#999}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.small{padding:4px 8px;font-size:12px}
+input,select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+h1,h2,h3{margin:0}
+.hidden{display:none!important}
+.wrap{max-width:1280px;margin:0 auto;padding:12px 16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--sub);font-size:12px}
+/* title */
+#title .hero{text-align:center;padding:40px 0 20px}
+#title .hero h1{font-size:34px;letter-spacing:.08em}
+#title .hero h1 span{color:var(--accent)}
+#title .hero p{color:var(--sub)}
+.form{max-width:460px;margin:0 auto;display:grid;gap:12px}
+.form label{display:grid;gap:4px;font-size:12px;color:var(--sub)}
+.colors{display:flex;gap:6px;flex-wrap:wrap}
+.colors .sw{width:28px;height:28px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+.colors .sw.on{border-color:#222}
+/* lobby */
+.lobby{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:800px){.lobby{grid-template-columns:1fr}}
+.code{font-size:28px;font-weight:700;letter-spacing:.15em;color:var(--accent)}
+.plist{display:grid;gap:6px;margin-top:8px}
+.pitem{display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--line);border-radius:8px}
+.dot{width:14px;height:14px;border-radius:50%;flex:none;display:inline-block;vertical-align:middle}
+.tag{font-size:11px;padding:1px 6px;border-radius:10px;background:#eee;color:#555}
+.tag.ruling{background:#fff3cd;color:#8a6d00}
+/* game */
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.phase{font-size:20px;font-weight:700}
+.phase small{font-size:13px;color:var(--sub);font-weight:400;margin-left:6px}
+.news{background:#fff8e1;border:1px solid #f0d78c;border-radius:10px;padding:8px 12px;font-size:13px}
+.news b{color:#8a5a00}
+.game{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:12px}
+@media(max-width:900px){.game{grid-template-columns:1fr}}
+#map{width:100%;height:auto;display:block;background:var(--sea);border-radius:10px}
+.tile{cursor:pointer}
+.tile rect.bg{stroke:#fff;stroke-width:2}
+.tile.sel rect.bg{stroke:#111;stroke-width:3}
+.tile.cand rect.bg{stroke:#ff6f00;stroke-width:4;animation:pulse 1s infinite alternate}
+.tile.done rect.bg{stroke:#9e9e9e;stroke-dasharray:4 3;stroke-width:3}
+@keyframes pulse{from{stroke-opacity:1}to{stroke-opacity:.35}}
+.tile text{pointer-events:none;font-weight:700}
+.side{display:grid;gap:12px;align-content:start}
+.turnbox{border:2px solid var(--line)}
+.turnbox.mine{border-color:var(--accent);box-shadow:0 0 0 3px #c628281a}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.actions button{text-align:left;padding:10px}
+.actions button b{display:block;font-size:14px}
+.actions button span{font-size:11px;color:var(--sub)}
+.cands{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.cands button{padding:6px;font-size:12px}
+.cands button.done{text-decoration:line-through}
+.players{display:grid;gap:6px}
+.pc{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:8px}
+.pc.cur{background:#fff4f4;border-color:#f3b3b3}
+.pc .stats{font-size:11px;color:var(--sub);display:flex;gap:8px;flex-wrap:wrap}
+.pc .seat{font-size:18px;font-weight:700;text-align:right}
+.pc .seat small{display:block;font-size:10px;color:var(--sub);font-weight:400}
+.bar465{position:relative;height:22px;border-radius:6px;overflow:hidden;display:flex;background:#eee;margin-top:6px}
+.bar465 div{height:100%}
+.bar465 .maj{position:absolute;left:50.1%;top:-2px;bottom:-2px;width:2px;background:#111}
+#log{height:220px;overflow:auto;font-size:12px;line-height:1.6;background:#fafafa;border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+#log .sys{color:#8a5a00}
+.detail h3{font-size:16px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;margin:6px 0}
+.kv span:nth-child(odd){color:var(--sub)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:8px;z-index:99;font-size:13px;max-width:90vw}
+.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal .card{max-width:720px;width:100%;max-height:90vh;overflow:auto}
+.rules p{margin:4px 0}
+.rules h3{margin:12px 0 4px;font-size:15px;color:var(--accent)}
+.count-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:10px 0;max-height:46vh;overflow:auto}
+.count-item{border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:12px;animation:pop .3s}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
+table.res{width:100%;border-collapse:collapse;font-size:13px}
+table.res th,table.res td{padding:6px;border-bottom:1px solid var(--line);text-align:right}
+table.res th:first-child,table.res td:first-child{text-align:left}
+.winner{font-size:24px;font-weight:700;text-align:center;margin:10px 0;color:var(--gold)}
+.chat{display:flex;gap:6px;margin-top:6px}
+.chat input{flex:1;min-width:0}
+</style>
+</head>
+<body>
+
+<!-- ===== タイトル ===== -->
+<section id="title" class="wrap">
+  <div class="hero">
+    <h1>選挙で<span>勝とう</span></h1>
+    <p>衆議院 全465議席をめぐる12日間の選挙戦 ― オンライン対戦版</p>
+  </div>
+  <div class="card form">
+    <label>プレイヤー名<input id="inName" maxlength="12" placeholder="なまえ"></label>
+    <label>政党名<input id="inParty" maxlength="10" placeholder="〇〇党"></label>
+    <label>党のカラー<div class="colors" id="inColors"></div></label>
+    <button class="primary" id="btnHost">部屋を作る（ホスト）</button>
+    <div class="row"><input id="inCode" placeholder="部屋コード" maxlength="6" style="flex:1;text-transform:uppercase"><button id="btnJoin">部屋に参加</button></div>
+    <button id="btnRules2">ルール説明</button>
+    <p class="muted">部屋を作ると、オンライン接続できない環境でも CPU や同じ端末の仲間とローカル対戦ができます。</p>
+  </div>
+</section>
+
+<!-- ===== ロビー ===== -->
+<section id="lobby" class="wrap hidden">
+  <div class="top"><h2>ロビー</h2><button id="btnRules3" class="small">ルール</button></div>
+  <div class="lobby">
+    <div class="card">
+      <div class="muted">部屋コード</div>
+      <div class="code" id="lbCode">----</div>
+      <div class="muted" id="lbNet">接続中…</div>
+      <div class="row" style="margin-top:8px"><button class="small" id="btnCopy">招待リンクをコピー</button></div>
+      <h3 style="margin-top:14px">参加者 <span class="muted" id="lbCount"></span></h3>
+      <div class="plist" id="lbPlayers"></div>
+      <div class="row hostonly" style="margin-top:10px">
+        <button class="small" id="btnAddCpu">＋CPUを追加</button>
+        <button class="small" id="btnAddLocal">＋この端末のプレイヤーを追加</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>ゲーム設定</h3>
+      <div class="hostonly" style="display:grid;gap:10px;margin-top:10px">
+        <label class="row">モード
+          <select id="setMode"><option value="normal">通常モード（最多議席の党が勝利）</option><option value="vs">VSモード（与党 vs 野党）</option></select>
+        </label>
+        <label class="row" id="rowRuling">与党
+          <select id="setRuling"></select>
+        </label>
+        <label class="row"><input type="checkbox" id="setSpread" checked> 支持の拡散フェーズ（毎日夜明けに隣接県へ支持拡大）</label>
+        <button class="primary" id="btnStart">公示日を迎える（ゲーム開始）</button>
+      </div>
+      <div class="clientonly muted" style="margin-top:10px">ホストが開始するのを待っています…</div>
+      <div id="lbSettings" class="muted" style="margin-top:10px"></div>
+      <h3 style="margin-top:14px">自分の設定</h3>
+      <div class="row" style="margin-top:6px">
+        <input id="lbName" maxlength="12" style="width:110px"><input id="lbParty" maxlength="10" style="width:110px">
+      </div>
+      <div class="colors" id="lbColors" style="margin-top:6px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ゲーム ===== -->
+<section id="game" class="wrap hidden">
+  <div class="top">
+    <div class="phase" id="gPhase"></div>
+    <div class="news" id="gNews"></div>
+    <div class="row"><button class="small" id="btnRules4">ルール</button></div>
+  </div>
+  <div class="game">
+    <div class="side">
+      <div class="card" style="padding:8px"><svg id="map" viewBox="0 0 700 650"></svg>
+        <div class="muted" style="margin-top:4px">マスの色＝現在その県で最も議席を取っている党／下のバー＝議席の内訳。県をタップで詳細・支持率調査。</div>
+      </div>
+      <div class="card detail" id="gDetail"><span class="muted">県を選択してください</span></div>
+    </div>
+    <div class="side">
+      <div class="card turnbox" id="gTurn"></div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><h3>各党</h3><span class="muted" id="gSeatNote"></span></div>
+        <div class="bar465" id="gBar"></div>
+        <div class="players" id="gPlayers" style="margin-top:8px"></div>
+      </div>
+      <div class="card">
+        <h3>速報・ログ</h3>
+        <div id="log" style="margin-top:6px"></div>
+        <div class="chat"><input id="chatIn" maxlength="120" placeholder="チャット"><button id="chatBtn" class="small">送信</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 開票 ===== -->
+<div id="countModal" class="modal hidden"><div class="card">
+  <h2 style="text-align:center">13日目　開票速報</h2>
+  <div class="count-list" id="countList"></div>
+  <div id="countResult"></div>
+  <div class="row" style="justify-content:center;margin-top:10px">
+    <button class="small" id="btnSkipCount">結果へスキップ</button>
+    <button class="small hidden" id="btnCloseCount">盤面を見る</button>
+    <button class="small hidden hostonly" id="btnAgain">ロビーに戻る（もう一度）</button>
+  </div>
+</div></div>
+
+<!-- ===== ルール ===== -->
+<div id="rulesModal" class="modal hidden"><div class="card rules">
+  <h2>ルール説明</h2>
+  <p>舞台は日本。衆議院選挙の<b>全465議席</b>（小選挙区289＋比例代表176）を一番多く取った党の勝利です！</p>
+  <p>公示日から投票日までの<b>12日間（全36ターン：朝・昼・夜）</b>で、各政党の党首として議席獲得を目指しましょう。各ターン、全員が行動順に1回ずつ行動します。</p>
+  <h3>1ターンの行動（いずれか1つ）</h3>
+  <p>・<b>演説をする</b>：ランダムに選ばれた15県から演説先を選ぶ。演説力×2 ％支持率アップ。1回100万円・演説数1を消費。<br>　東京は演説数4（400万円）、埼玉・千葉・神奈川・愛知・大阪・兵庫は演説数2（200万円）を消費。演説数がなくなるか資金が100万円未満で終了。</p>
+  <p>・<b>演説の練習</b>：演説力＋1</p>
+  <p>・<b>協力者集め</b>：協力者が（60＋11×影響力）人増加</p>
+  <p>・<b>資金集め</b>：資金が（1万円×協力者数）増加</p>
+  <p>・<b>SNS活動</b>：影響力＋1</p>
+  <p>・<b>演説数を増やす</b>：2000万円で1ターンの演説数＋1</p>
+  <p>・<b>支持率調査</b>（行動を消費しない）：自党の県内支持率を調べる（±5％の誤差あり、各県1ターン1回）</p>
+  <h3>初期値</h3>
+  <p>資金500万円／協力者300人／演説力5／演説数1／影響力0。各県の支持率は全党で均等に分けた状態から始まります。</p>
+  <h3>イベント（毎晩、翌日分が発表）</h3>
+  <p>・なし：平穏な一日<br>・関東で大雪警報：関東1都6県で演説効果0.8倍<br>・地方創生を公約に：議席数2の8県（山梨・福井・和歌山・鳥取・島根・徳島・高知・佐賀）で演説効果1.5倍<br>・〇〇で悪天候：特定の地方で演説効果0.8倍<br>・野党共闘の噂：議席最下位の党は全県で演説効果1.3倍<br>・献金問題発覚：議席トップの党の資金が半分に<br>・失言が拡散：影響力が高い党ほど選ばれやすく、影響力−2<br>・公約が評価される：演説力が一番高い党は全県で演説効果1.2倍</p>
+  <h3>特殊フェーズ（毎日夜明け）</h3>
+  <p>・<b>SNS選挙運動</b>：影響力1位の党が東京、2位が大阪、3位が愛知で支持率＋（影響力÷5、1〜3）<br>・<b>支持の拡散</b>（設定でON/OFF）：各県のトップ政党の支持が隣接県に広がる</p>
+  <h3>議席の決まり方</h3>
+  <p>小選挙区：各県の定数×支持率で配分。比例代表：11ブロックごとに支持率合計でドント式配分。</p>
+  <h3>VSモード</h3>
+  <p>与党（資金3000万・協力者200・演説力0.9倍・SNSは＋1）と野党（SNSは＋2）に分かれ、与党が過半数233議席以上なら与党の勝利、届かなければ野党の勝利。</p>
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="btnCloseRules">閉じる</button></div>
+</div></div>
+
+<script>
+'use strict';
+/* ================= データ ================= */
+const P = [ // 名前, 定数, col, row, w, h
+ ['北海道',12,12,0,2,2],['青森県',3,12,2],['秋田県',3,11,3],['岩手県',3,12,3],['山形県',3,11,4],['宮城県',5,12,4],
+ ['石川県',3,9,5],['富山県',3,10,5],['新潟県',5,11,5],['福島県',4,12,5],
+ ['島根県',2,4,6],['鳥取県',2,5,6],['福井県',2,8,6],['岐阜県',5,9,6],['長野県',5,10,6],['群馬県',5,11,6],['栃木県',5,12,6],
+ ['山口県',3,3,7],['広島県',6,4,7],['岡山県',4,5,7],['兵庫県',12,6,7],['京都府',6,7,7],['滋賀県',3,8,7],['愛知県',16,9,7],['山梨県',2,10,7],['埼玉県',16,11,7],['茨城県',7,12,7],
+ ['佐賀県',2,1,8],['福岡県',11,2,8],['大分県',3,3,8],['大阪府',19,7,8],['奈良県',3,8,8],['三重県',4,9,8],['静岡県',8,10,8],['東京都',30,11,8],['千葉県',14,12,8],
+ ['長崎県',3,1,9],['熊本県',4,2,9],['宮崎県',3,3,9],['愛媛県',3,4,9],['香川県',3,5,9],['和歌山県',2,7,9],['神奈川県',20,11,9],
+ ['鹿児島県',4,2,10],['高知県',2,4,10],['徳島県',2,5,10],['沖縄県',4,0,12]
+];
+const PREFS = P.map(a=>({n:a[0],s:a[1],c:a[2],r:a[3],w:a[4]||1,h:a[5]||1,sh:a[0]==='北海道'?'北海道':a[0].replace(/[県府都]$/,'')}));
+const PM = Object.fromEntries(PREFS.map(p=>[p.n,p]));
+const PR_BLOCKS = [
+ ['北海道',8,['北海道']],['東北',12,['青森県','岩手県','宮城県','秋田県','山形県','福島県']],
+ ['北関東',19,['茨城県','栃木県','群馬県','埼玉県']],['南関東',23,['千葉県','神奈川県','山梨県']],['東京',19,['東京都']],
+ ['北信越',10,['新潟県','富山県','石川県','福井県','長野県']],['東海',21,['岐阜県','静岡県','愛知県','三重県']],
+ ['近畿',28,['滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県']],['中国',10,['鳥取県','島根県','岡山県','広島県','山口県']],
+ ['四国',6,['徳島県','香川県','愛媛県','高知県']],['九州',20,['福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県']]
+].map(a=>({n:a[0],s:a[1],prefs:a[2]}));
+const blockOf = n => PR_BLOCKS.find(b=>b.prefs.includes(n)).n;
+const REGIONS = {
+ '関東':['東京都','神奈川県','千葉県','埼玉県','茨城県','栃木県','群馬県'],
+ '近畿':['滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','三重県'],
+ '九州':['福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'],
+ '東北':['青森県','岩手県','秋田県','宮城県','山形県','福島県'],
+ '中部':['新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県'],
+ '中国':['鳥取県','島根県','岡山県','広島県','山口県'],
+ '四国':['徳島県','香川県','愛媛県','高知県']
+};
+const SMALL8 = ['山梨県','福井県','和歌山県','鳥取県','島根県','徳島県','高知県','佐賀県'];
+const ADJ_RAW = `北海道:青森県|青森県:北海道,岩手県,秋田県|岩手県:青森県,宮城県,秋田県|宮城県:岩手県,秋田県,山形県,福島県|秋田県:青森県,岩手県,宮城県,山形県|山形県:宮城県,秋田県,福島県,新潟県|福島県:宮城県,山形県,茨城県,栃木県,群馬県,新潟県|茨城県:福島県,栃木県,埼玉県,千葉県|栃木県:福島県,茨城県,群馬県,埼玉県|群馬県:福島県,栃木県,埼玉県,新潟県,長野県|埼玉県:茨城県,栃木県,群馬県,千葉県,東京都,山梨県,長野県|千葉県:茨城県,埼玉県,東京都|東京都:埼玉県,千葉県,神奈川県,山梨県|神奈川県:千葉県,東京都,山梨県,静岡県|新潟県:山形県,福島県,群馬県,富山県,長野県|富山県:新潟県,石川県,長野県,岐阜県|石川県:富山県,福井県,岐阜県|福井県:石川県,岐阜県,滋賀県,京都府|山梨県:埼玉県,東京都,神奈川県,長野県,静岡県|長野県:群馬県,埼玉県,新潟県,富山県,山梨県,岐阜県,静岡県,愛知県|岐阜県:富山県,石川県,福井県,長野県,愛知県,三重県,滋賀県|静岡県:神奈川県,山梨県,長野県,愛知県|愛知県:長野県,岐阜県,静岡県,三重県|三重県:岐阜県,愛知県,滋賀県,京都府,奈良県,和歌山県|滋賀県:福井県,岐阜県,三重県,京都府|京都府:福井県,三重県,滋賀県,大阪府,兵庫県,奈良県|大阪府:京都府,兵庫県,奈良県,和歌山県|兵庫県:京都府,大阪府,鳥取県,岡山県,徳島県|奈良県:三重県,京都府,大阪府,和歌山県|和歌山県:三重県,大阪府,奈良県,徳島県|鳥取県:兵庫県,島根県,岡山県,広島県|島根県:鳥取県,広島県,山口県|岡山県:兵庫県,鳥取県,広島県,香川県|広島県:鳥取県,島根県,岡山県,山口県,愛媛県|山口県:島根県,広島県,福岡県|徳島県:兵庫県,和歌山県,香川県,愛媛県,高知県|香川県:岡山県,徳島県,愛媛県|愛媛県:広島県,徳島県,香川県,高知県,大分県|高知県:徳島県,愛媛県|福岡県:山口県,佐賀県,熊本県,大分県|佐賀県:福岡県,長崎県|長崎県:佐賀県,熊本県|熊本県:福岡県,佐賀県,長崎県,大分県,宮崎県,鹿児島県|大分県:愛媛県,福岡県,熊本県,宮崎県|宮崎県:熊本県,大分県,鹿児島県|鹿児島県:熊本県,宮崎県,沖縄県|沖縄県:鹿児島県`;
+const ADJ = Object.fromEntries(ADJ_RAW.split('|').map(s=>{const [k,v]=s.split(':');return [k,v.split(',')]}));
+const COLORS = [['#e53935','赤'],['#1e88e5','青'],['#43a047','緑'],['#f9a825','黄'],['#8e24aa','紫'],['#00acc1','水'],['#fb8c00','橙'],['#ec407a','桃']];
+const EVENTS = [
+ {t:'なし',d:'平穏な一日です。'},
+ {t:'地方創生を公約に',d:'議席2の8県で演説効果1.5倍！'},
+ {t:'関東で大雪警報',d:'関東1都6県で演説効果0.8倍'},
+ {t:'悪天候',d:'で演説効果0.8倍'},
+ {t:'野党共闘の噂',d:'は全県で演説効果1.3倍！'},
+ {t:'献金問題発覚',d:'の資金が半分没収されました'},
+ {t:'失言が拡散',d:'の影響力が2低下しました'},
+ {t:'公約が評価される',d:'は全県で演説効果1.2倍！'}
+];
+const TOTAL_D=289, TOTAL_PR=176, TOTAL=465, MAJ=233, PHASES=36;
+const PREFIX='senkyo-katou-';
+
+/* ================= ユーティリティ ================= */
+const $ = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = n => Math.floor(Math.random()*n);
+const shuffle = a => {a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+const uid = () => Math.random().toString(36).slice(2,10);
+const lsGet = k => {try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet = (k,v) => {try{localStorage.setItem(k,v)}catch(e){}};
+const speechCost = n => n==='東京都'?4:['埼玉県','千葉県','神奈川県','愛知県','大阪府','兵庫県'].includes(n)?2:1;
+const yen = m => m>=10000 ? (Math.floor(m/10000)+'億'+(m%10000? (m%10000)+'万':'')) : m+'万';
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+function beep(){try{const c=new (window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.15);setTimeout(()=>c.close(),400)}catch(e){}}
+function mix(hex,t){const n=parseInt(hex.slice(1),16);const r=n>>16,g=n>>8&255,b=n&255;const f=x=>Math.round(255+(x-255)*t);return `rgb(${f(r)},${f(g)},${f(b)})`}
+function lum(hex){const n=parseInt(hex.slice(1),16);return (0.299*(n>>16)+0.587*(n>>8&255)+0.114*(n&255))/255}
+
+/* ================= 状態 ================= */
+let S = null;            // 共有ゲーム状態（ホストが正）
+let isHost = false, myPid = null, peer = null, hostConn = null;
+const conns = new Map(); // ホスト: peerId -> {conn,pid}
+let roomCode = '';
+const surveyMemo = {};   // 自分の支持率調査結果 pid -> pref -> {v,est,label}
+let selPref = null, cpuTimer = null, lastTurnKey = '', countShownFor = null;
+const me = {name: lsGet('sk_name')||'', party: lsGet('sk_party')||'', color: lsGet('sk_color')||COLORS[0][0], cid: lsGet('sk_cid')||uid()};
+lsSet('sk_cid', me.cid);
+
+function newState(){
+  return {v:0,status:'lobby',settings:{mode:'normal',ruling:'random',spread:true},players:[],order:[],idx:0,phase:0,
+    support:{},event:{id:0,area:'',target:null},speech:null,surveyed:{},log:[],daily:null,final:null};
+}
+const pById = id => S.players.find(p=>p.id===id);
+const curPid = () => S && S.status==='play' ? S.order[S.idx] : null;
+const pname = p => p ? `<b style="color:${p.color}">${esc(p.party)}</b>（${esc(p.name)}）` : '―';
+function addLog(html, sys){ S.log.push({h:html, s:!!sys}); if(S.log.length>200) S.log.splice(0,S.log.length-200); }
+function phaseLabel(ph){ if(ph>=PHASES) return '13日目 開票'; return `${Math.floor(ph/3)+1}日目 ${['朝','昼','夜'][ph%3]}`; }
+
+/* ================= エンジン（ホストのみ） ================= */
+function initSupport(){
+  const ids = S.players.map(p=>p.id), n=ids.length, base=Math.floor(100/n), rem=100%n;
+  S.support = {};
+  for(const pf of PREFS){ S.support[pf.n] = {}; ids.forEach((id,i)=>S.support[pf.n][id]=base+(i<rem?1:0)); }
+}
+function getSup(pref,id){ return (S.support[pref]||{})[id]||0; }
+function normalize(pref){
+  const m=S.support[pref], ids=S.players.map(p=>p.id);
+  const total = ids.reduce((a,id)=>a+Math.max(0,m[id]||0),0); if(total<=0) return;
+  let acc=0;
+  ids.forEach((id,i)=>{ let v; if(i===ids.length-1) v=Math.max(0,100-acc); else { v=Math.round(Math.max(0,m[id]||0)*100/total); acc+=v; } m[id]=v; });
+}
+function addSupport(pref,id,amt){
+  const m=S.support[pref]; if(!m) return;
+  const ids=S.players.map(p=>p.id);
+  if(ids.length<=1){ m[id]=100; return; }
+  const cur=m[id]||0, nv=Math.min(100,cur+amt), delta=nv-cur; m[id]=nv;
+  const others=ids.filter(x=>x!==id);
+  for(let i=0;i<delta;i++){
+    let best=null; for(const o of others){ if(best===null || (m[o]||0)>(m[best]||0)) best=o; }
+    if(best!==null) m[best]=Math.max(0,(m[best]||0)-1);
+  }
+  normalize(pref);
+}
+function topOf(pref){ let best=null,bv=-1; for(const p of S.players){const v=getSup(pref,p.id); if(v>bv){bv=v;best=p.id}} return bv>0?best:null; }
+function calcSeats(){
+  const res={}; S.players.forEach(p=>res[p.id]={d:0,p:0,t:0});
+  let sum=0;
+  for(const p of S.players){ let raw=0; for(const pf of PREFS) raw+=getSup(pf.n,p.id)/100*pf.s; res[p.id].d=Math.round(raw); sum+=res[p.id].d; }
+  if(sum!==TOTAL_D && S.players.length){ let top=S.players[0].id; for(const p of S.players) if(res[p.id].d>res[top].d) top=p.id; res[top].d += TOTAL_D-sum; }
+  for(const b of PR_BLOCKS){
+    const votes={}; S.players.forEach(p=>votes[p.id]=b.prefs.reduce((a,n)=>a+getSup(n,p.id),0));
+    const won={}; S.players.forEach(p=>won[p.id]=0);
+    for(let i=0;i<b.s;i++){ let best=null,bq=-1; for(const p of S.players){ const q=votes[p.id]/(won[p.id]+1); if(q>bq){bq=q;best=p.id} } if(best) won[best]++; }
+    S.players.forEach(p=>res[p.id].p+=won[p.id]);
+  }
+  S.players.forEach(p=>res[p.id].t=res[p.id].d+res[p.id].p);
+  return res;
+}
+function prefSeats(pref){ const o={}; const pf=PM[pref]; S.players.forEach(p=>o[p.id]=Math.round(getSup(pref,p.id)/100*pf.s)); return o; }
+function effPower(p){ return (S.settings.mode==='vs' && p.ruling) ? Math.round(p.power*0.9) : p.power; }
+function eventMult(pid,pref){
+  const e=S.event; switch(e.id){
+    case 1: return SMALL8.includes(pref)?1.5:1;
+    case 2: return REGIONS['関東'].includes(pref)?0.8:1;
+    case 3: return (REGIONS[e.area]||[]).includes(pref)?0.8:1;
+    case 4: return e.target===pid?1.3:1;
+    case 7: return e.target===pid?1.2:1;
+    default: return 1;
+  }
+}
+function seatRanking(){ const s=calcSeats(); return S.players.map(p=>({id:p.id,t:s[p.id].t})); }
+function triggerEvent(){
+  const id=rnd(EVENTS.length); const e={id,area:'',target:null}; S.event=e;
+  let extra='';
+  if(id===3){ const ks=Object.keys(REGIONS); e.area=ks[rnd(ks.length)]; }
+  if(id===4){ const r=seatRanking(); let b=r[0]; r.forEach(x=>{if(x.t<b.t)b=x}); e.target=b.id; }
+  if(id===5){ const r=seatRanking(); let b=r[0]; r.forEach(x=>{if(x.t>b.t)b=x}); e.target=b.id; const p=pById(b.id); const lost=Math.floor(p.money/2); p.money-=lost; extra=`（−${yen(lost)}円）`; }
+  if(id===6){ const tot=S.players.reduce((a,p)=>a+Math.max(0,p.inf)+1,0); let r=Math.random()*tot; let tgt=S.players[0];
+    for(const p of S.players){ r-=Math.max(0,p.inf)+1; if(r<=0){tgt=p;break;} } e.target=tgt.id; tgt.inf=Math.max(0,tgt.inf-2); }
+  if(id===7){ let b=S.players[0]; S.players.forEach(p=>{if(effPower(p)>effPower(b))b=p}); e.target=b.id; }
+  addLog(`📰【明日の政界ニュース】<b>${esc(eventTitle(e))}</b>：${eventDesc(e)}${extra}`, true);
+}
+function eventTitle(e){ return e.id===3 ? `${e.area}で悪天候` : EVENTS[e.id].t; }
+function eventDesc(e){
+  const d=EVENTS[e.id].d;
+  if(e.id===3) return `${e.area}地方${d}`;
+  if([4,5,6,7].includes(e.id)) return `${pname(pById(e.target))}${d}`;
+  return d;
+}
+function cityInfluence(){
+  const ranked = S.players.slice().sort((a,b)=>b.inf-a.inf);
+  const byRank = i => i<ranked.length ? ranked[i] : (i===2 && ranked.length ? ranked[0] : null);
+  const tk=byRank(0); if(!tk) return;
+  const msgs=[];
+  [['東京都',tk],['大阪府',byRank(1)],['愛知県',byRank(2)]].forEach(([c,p])=>{ if(!p) return;
+    const g=Math.min(3,Math.max(1,Math.floor(p.inf/5))); addSupport(c,p.id,g); msgs.push(`${c.replace(/[都府県]$/,'')}：${pname(p)} +${g}%`); });
+  addLog(`🌅 夜が明けた… SNS選挙運動により主要都市の支持が変動！ ${msgs.join('／')}`, true);
+}
+function spreadInfluence(){
+  const adds={}, news=[];
+  for(const pf of PREFS){
+    const top=topOf(pf.n); if(!top) continue;
+    const s=getSup(pf.n,top); if(rnd(100)>=90) continue;
+    const amt = s>=51?2:1; const nb=ADJ[pf.n]; if(!nb||!nb.length) continue;
+    const to=nb[rnd(nb.length)]; adds[to]=adds[to]||{}; adds[to][top]=(adds[to][top]||0)+amt;
+    news.push(`${pname(pById(top))}の支持が${pf.sh}から${PM[to].sh}へ拡大`);
+  }
+  for(const to in adds){ for(const id in adds[to]) addSupport(to,id,adds[to][id]); normalize(to); }
+  if(news.length) addLog(`🔴【速報】支持拡大ニュース：${shuffle(news).slice(0,3).join('、')} ほか`, true);
+}
+function phaseEnd(prev){
+  if(prev%3===2){
+    cityInfluence();
+    if(S.settings.spread) spreadInfluence();
+    if(prev!==PHASES-1) triggerEvent(); else { S.event={id:0,area:'',target:null}; addLog('【お知らせ】明日は開票日のため、イベントは発生しません。',true); }
+    if(prev<PHASES-1){ S.daily=calcSeats(); S.dailyLabel=`${Math.floor(prev/3)+1}日目終了時点`; addLog(`📊 ${Math.floor(prev/3)+1}日目終了時点の議席予測が発表されました`, true); }
+  }
+}
+function announceTurn(){
+  const p=pById(curPid()); if(!p) return;
+  p.scount = p.smax;
+}
+function endAction(){
+  S.speech=null; S.surveyed={};
+  S.idx++;
+  if(S.idx>=S.order.length){ S.idx=0; const prev=S.phase; S.phase++; phaseEnd(prev);
+    if(S.phase<PHASES) addLog(`―― ${phaseLabel(S.phase)} ――`, true); }
+  if(S.phase>=PHASES){ startCounting(); return; }
+  announceTurn();
+}
+function startCounting(){
+  S.status='end';
+  const seats=calcSeats();
+  const byPref=PREFS.map(pf=>({n:pf.n,s:pf.s,seats:prefSeats(pf.n)}));
+  const prBlocks=PR_BLOCKS.map(b=>{ const votes={},won={}; S.players.forEach(p=>{votes[p.id]=b.prefs.reduce((a,n)=>a+getSup(n,p.id),0);won[p.id]=0});
+    for(let i=0;i<b.s;i++){let best=null,bq=-1;for(const p of S.players){const q=votes[p.id]/(won[p.id]+1);if(q>bq){bq=q;best=p.id}} if(best)won[best]++;} return {n:b.n,s:b.s,won}; });
+  let winner=S.players[0].id; S.players.forEach(p=>{if(seats[p.id].t>seats[winner].t)winner=p.id});
+  let vs=null;
+  if(S.settings.mode==='vs'){ const r=S.players.filter(p=>p.ruling).reduce((a,p)=>a+seats[p.id].t,0); vs={ruling:r, win:r>=MAJ?'ruling':'opp'}; }
+  S.final={seats,byPref,prBlocks,winner,vs,id:uid()};
+  addLog('🗳 13日目：開票速報を開始します！', true);
+}
+function startGame(){
+  const ps=S.players; if(!ps.length) return;
+  ps.forEach(p=>Object.assign(p,{money:500,sup:300,power:5,smax:1,scount:1,inf:0,ruling:false}));
+  if(S.settings.mode==='vs'){
+    let r = S.settings.ruling==='random' ? ps[rnd(ps.length)] : (pById(S.settings.ruling)||ps[rnd(ps.length)]);
+    r.ruling=true; r.money=3000; r.sup=200;
+  }
+  initSupport();
+  S.order=shuffle(ps.map(p=>p.id)); S.idx=0; S.phase=0; S.event={id:0,area:'',target:null}; S.speech=null; S.surveyed={}; S.daily=calcSeats(); S.dailyLabel='公示日時点'; S.final=null; S.log=[];
+  S.status='play';
+  addLog('📢 公示日になりました！ 選挙戦スタート', true);
+  if(S.settings.mode==='vs') addLog(`VSモード：与党は ${ps.filter(p=>p.ruling).map(pname).join('、')}。与党が${MAJ}議席以上で与党の勝利！`, true);
+  addLog('【行動順】'+S.order.map((id,i)=>`${i+1}. ${pname(pById(id))}`).join(' '), true);
+  addLog(`―― ${phaseLabel(0)} ――`, true);
+  announceTurn();
+}
+// 行動処理。エラー文字列 or null を返す
+function act(pid, a, arg){
+  if(!S || S.status!=='play') return 'ゲーム中ではありません';
+  const p=pById(pid); if(!p) return 'プレイヤーが見つかりません';
+  if(curPid()!==pid) return '今はあなたの手番ではありません';
+  if(S.speech && !['speech_at','speech_end'].includes(a)) return '演説中は他の行動はできません';
+  switch(a){
+    case 'speech_start': {
+      if(p.money<100) return '資金が足りません！演説には最低100万円が必要です';
+      S.speech={choices:shuffle(PREFS.map(x=>x.n)).slice(0,15),done:[]};
+      addLog(`🔔 ${pname(p)}が演説の準備を始めました`);
+      break; }
+    case 'speech_at': {
+      const sp=S.speech; if(!sp) return 'まず「演説をする」を選んでください';
+      if(!sp.choices.includes(arg)) return 'その県は今回の演説候補ではありません';
+      if(sp.done.includes(arg)) return 'その県ではもう演説しました';
+      const c=speechCost(arg);
+      if(p.scount<c) return `演説数が足りません（${arg}は演説数${c}が必要）`;
+      if(p.money<c*100) return `資金が足りません（${c*100}万円必要）`;
+      p.scount-=c; p.money-=c*100; sp.done.push(arg);
+      const m=eventMult(pid,arg); const gain=Math.floor(effPower(p)*2*m);
+      addSupport(arg,pid,gain); normalize(arg);
+      addLog(`🎤 ${pname(p)}が<b>${esc(arg)}</b>で演説！${m!==1?`（x${m}効果）`:''} 支持率 +${gain}%`);
+      if(p.scount<=0){ endAction(); }
+      else if(p.money<100){ addLog(`${pname(p)}は資金が100万円未満になり演説終了`); endAction(); }
+      break; }
+    case 'speech_end': if(!S.speech) return '演説中ではありません'; addLog(`${pname(p)}が演説を終えました`); endAction(); break;
+    case 'practice': p.power+=1; addLog(`📖 ${pname(p)}が演説の練習！ 演説力 ${p.power}`); endAction(); break;
+    case 'supporters': { const g=60+11*p.inf; p.sup+=g; addLog(`🤝 ${pname(p)}が協力者を集めました +${g}人（計${p.sup}人）`); endAction(); break; }
+    case 'fund': { const g=p.sup; p.money+=g; addLog(`💰 ${pname(p)}が活動資金を調達 +${yen(g)}円`); endAction(); break; }
+    case 'sns': { const g=(S.settings.mode==='vs'&&!p.ruling)?2:1; p.inf+=g; addLog(`📱 ${pname(p)}がSNS活動！ 影響力 +${g}（${p.inf}）`); endAction(); break; }
+    case 'add_speech': if(p.money<2000) return '資金が足りません（2000万円必要）';
+      p.money-=2000; p.smax+=1; p.scount+=1; addLog(`⚡ ${pname(p)}が2000万円を投じ、演説数を${p.smax}に強化！`); endAction(); break;
+    default: return '不明な行動です';
+  }
+  return null;
+}
+function survey(pid, pref){
+  if(!S||S.status!=='play') return {err:'ゲーム中のみ調査できます'};
+  if(!PM[pref]) return {err:'不明な県'};
+  const list=S.surveyed[pid]=S.surveyed[pid]||[];
+  if(list.includes(pref)) return {err:'この県はこのターンすでに調査しました'};
+  list.push(pref);
+  const v=Math.max(0,Math.min(100,getSup(pref,pid)+rnd(11)-5));
+  return {pref,v,est:Math.round(v/100*PM[pref].s),label:phaseLabel(S.phase)};
+}
+
+/* ================= CPU ================= */
+function cpuDecide(p){
+  if(S.speech){
+    const opts=S.speech.choices.filter(n=>!S.speech.done.includes(n)).filter(n=>speechCost(n)<=p.scount && speechCost(n)*100<=p.money);
+    if(!opts.length) return ['speech_end'];
+    let best=null,bs=-1;
+    for(const n of opts){ const pf=PM[n], my=getSup(n,p.id), m=eventMult(p.id,n);
+      const sc = pf.s*(1.15-my/100)*m/speechCost(n)*(0.8+Math.random()*0.4); if(sc>bs){bs=sc;best=n} }
+    return ['speech_at',best];
+  }
+  const ph=S.phase, r=Math.random();
+  if(p.money<100) return [p.sup>=250?'fund':'supporters'];
+  if(ph<5){ return [r<.4?'practice':r<.6?'fund':r<.8?'supporters':'sns']; }
+  if(p.money>=2600 && p.smax<5 && ph<27 && r<.45) return ['add_speech'];
+  if(p.money < Math.min(p.smax,4)*100) return ['fund'];
+  if(r<.62) return ['speech_start'];
+  if(r<.78) return ['practice'];
+  if(r<.92) return ['fund'];
+  return ['sns'];
+}
+function scheduleCpu(){
+  if(!isHost || !S || S.status!=='play') return;
+  const p=pById(curPid()); if(!p || p.kind!=='cpu') return;
+  clearTimeout(cpuTimer);
+  cpuTimer=setTimeout(()=>{ if(!S||S.status!=='play') return; const q=pById(curPid()); if(!q||q.kind!=='cpu') return;
+    const [a,arg]=cpuDecide(q); const err=act(q.id,a,arg); if(err){ act(q.id, S.speech?'speech_end':'fund'); } commit(); }, S.speech?450:700);
+}
+
+/* ================= 通信 ================= */
+function commit(){ if(!isHost) return; S.v++; render(); broadcast({t:'state',s:S}); scheduleCpu(); }
+function broadcast(msg){ for(const {conn} of conns.values()){ try{ if(conn.open) conn.send(msg); }catch(e){} } }
+function loadPeer(){
+  return new Promise((res,rej)=>{
+    if(window.Peer) return res();
+    const urls=['https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js','https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];
+    let i=0; const next=()=>{ if(i>=urls.length) return rej(new Error('PeerJSの読み込みに失敗')); const s=document.createElement('script'); s.src=urls[i++]; s.onload=()=>res(); s.onerror=next; document.head.appendChild(s); }; next();
+  });
+}
+function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<5;i++) s+=c[rnd(c.length)]; return s; }
+function netStatus(t){ $('lbNet').textContent=t; }
+async function startHost(){
+  isHost=true; S=newState();
+  const hp={id:uid(),cid:me.cid,name:me.name,party:me.party,color:me.color,kind:'host',online:true};
+  S.players.push(hp); myPid=hp.id;
+  roomCode=genCode(); show('lobby'); render();
+  try{ await loadPeer(); }catch(e){ netStatus('⚠ オンライン接続できません（ローカル／CPU対戦は可能）'); return; }
+  const open=()=>{
+    peer=new Peer(PREFIX+roomCode, window.PEER_OPTS||{});
+    peer.on('open',()=>{ netStatus('✅ オンライン待機中：このコードを友達に伝えてください'); render(); });
+    peer.on('error',e=>{ if(e.type==='unavailable-id'){ roomCode=genCode(); peer.destroy(); open(); render(); } else netStatus('⚠ 通信エラー：'+e.type+'（ローカル対戦は可能）'); });
+    peer.on('disconnected',()=>{ try{peer.reconnect()}catch(e){} });
+    peer.on('connection',conn=>{
+      conn.on('data',d=>onHostData(conn,d));
+      conn.on('close',()=>{ const c=conns.get(conn.peer); conns.delete(conn.peer); if(c&&c.pid){ const p=pById(c.pid); if(p){ if(S.status==='lobby'){ S.players=S.players.filter(x=>x.id!==p.id); } else { p.online=false; addLog(`${pname(p)}の接続が切れました`,true);} commit(); } } });
+    });
+  };
+  netStatus('接続中…'); open();
+}
+function onHostData(conn,d){
+  if(!d||typeof d!=='object') return;
+  const entry=conns.get(conn.peer);
+  if(d.t==='hello'){
+    const name=String(d.name||'名無し').slice(0,12), party=String(d.party||'無所属党').slice(0,10), color=COLORS.some(c=>c[0]===d.color)?d.color:COLORS[0][0];
+    let p=S.players.find(x=>x.cid===d.cid && x.kind==='remote');
+    if(p){ p.online=true; if(S.status==='lobby') Object.assign(p,{name,party,color}); }
+    else if(S.status==='lobby'){
+      if(S.players.length>=8){ conn.send({t:'err',msg:'満員です（最大8党）'}); return; }
+      p={id:uid(),cid:String(d.cid||uid()),name,party,color,kind:'remote',online:true}; S.players.push(p);
+    }
+    conns.set(conn.peer,{conn,pid:p?p.id:null});
+    conn.send({t:'welcome',pid:p?p.id:null,code:roomCode});
+    if(p && S.status!=='lobby') addLog(`${pname(p)}が再接続しました`,true);
+    commit(); return;
+  }
+  if(!entry) return;
+  const pid=entry.pid;
+  if(d.t==='act' && pid){ const err=act(pid,d.a,d.arg); if(err) conn.send({t:'err',msg:err}); else commit(); }
+  else if(d.t==='survey' && pid){ const r=survey(pid,d.pref); if(r.err) conn.send({t:'err',msg:r.err}); else conn.send({t:'survey',r}); }
+  else if(d.t==='chat' && pid){ const p=pById(pid); addLog(`💬 ${pname(p)}：${esc(String(d.text).slice(0,120))}`); commit(); }
+  else if(d.t==='profile' && pid && S.status==='lobby'){ const p=pById(pid); if(p){ if(d.name) p.name=String(d.name).slice(0,12); if(d.party) p.party=String(d.party).slice(0,10); if(COLORS.some(c=>c[0]===d.color)) p.color=d.color; commit(); } }
+}
+async function startClient(code){
+  isHost=false; roomCode=code.toUpperCase(); S=null;
+  show('lobby'); netStatus('接続中…'); render();
+  try{ await loadPeer(); }catch(e){ netStatus('⚠ 通信ライブラリを読み込めませんでした'); return; }
+  peer=new Peer(window.PEER_OPTS||{});
+  peer.on('open',()=>connectHost());
+  peer.on('error',e=>{ if(e.type==='peer-unavailable') { netStatus('⚠ 部屋が見つかりません。コードを確認してください'); toast('部屋が見つかりません'); } else netStatus('⚠ 通信エラー：'+e.type); });
+}
+function connectHost(){
+  hostConn=peer.connect(PREFIX+roomCode,{reliable:true});
+  hostConn.on('open',()=>{ netStatus('✅ ホストに接続しました'); hostConn.send({t:'hello',cid:me.cid,name:me.name,party:me.party,color:me.color}); });
+  hostConn.on('data',onClientData);
+  hostConn.on('close',()=>{ netStatus('⚠ ホストとの接続が切れました'); toast('ホストとの接続が切れました。再接続を試みます…'); setTimeout(()=>{ if(peer && !peer.destroyed) connectHost(); },3000); });
+}
+function onClientData(d){
+  if(d.t==='welcome'){ myPid=d.pid; if(!d.pid) toast('ゲーム進行中のため観戦モードで参加しました'); }
+  else if(d.t==='state'){ S=d.s; render(); }
+  else if(d.t==='err') toast(d.msg);
+  else if(d.t==='survey') onSurvey(myPid,d.r);
+}
+function viewPid(){ // この画面が操作するプレイヤー
+  if(!S) return myPid;
+  if(isHost){ const c=pById(curPid()); if(c && (c.kind==='host'||c.kind==='local')) return c.id; return myPid; }
+  return myPid;
+}
+function doAct(a,arg){
+  if(isHost){ const err=act(viewPid(),a,arg); if(err) toast(err); else commit(); }
+  else if(hostConn&&hostConn.open) hostConn.send({t:'act',a,arg}); else toast('ホストに接続されていません');
+}
+function doSurvey(pref){
+  const pid=viewPid(); if(!pid) return;
+  if(isHost){ const r=survey(pid,pref); if(r.err) toast(r.err); else onSurvey(pid,r); }
+  else if(hostConn&&hostConn.open) hostConn.send({t:'survey',pref});
+}
+function onSurvey(pid,r){ (surveyMemo[pid]=surveyMemo[pid]||{})[r.pref]=r; toast(`${r.pref}：あなたの支持率 約${r.v}%（推定${r.est}議席）`); render(); }
+function sendChat(){ const t=$('chatIn').value.trim(); if(!t) return; $('chatIn').value='';
+  if(isHost){ const p=pById(viewPid()); addLog(`💬 ${pname(p)}：${esc(t)}`); commit(); } else if(hostConn&&hostConn.open) hostConn.send({t:'chat',text:t}); }
+
+/* ================= 描画 ================= */
+function show(id){ ['title','lobby','game'].forEach(x=>$(x).classList.toggle('hidden',x!==id)); }
+function colorPicker(el,cur,cb){
+  el.innerHTML=COLORS.map(([c,n])=>`<div class="sw ${c===cur?'on':''}" title="${n}" style="background:${c}" data-c="${c}"></div>`).join('');
+  el.querySelectorAll('.sw').forEach(sw=>sw.onclick=()=>cb(sw.dataset.c));
+}
+function render(){
+  document.querySelectorAll('.hostonly').forEach(e=>e.classList.toggle('hidden',!isHost));
+  document.querySelectorAll('.clientonly').forEach(e=>e.classList.toggle('hidden',isHost));
+  if(!S){ return; }
+  if(S.status==='lobby'){ show('lobby'); renderLobby(); $('countModal').classList.add('hidden'); countShownFor=null; return; }
+  show('game'); renderGame();
+  if(S.status==='end' && S.final && countShownFor!==S.final.id){ countShownFor=S.final.id; runCount(); }
+}
+function renderLobby(){
+  $('lbCode').textContent=roomCode;
+  $('lbCount').textContent=`（${S.players.length}/8）`;
+  $('lbPlayers').innerHTML=S.players.map(p=>`<div class="pitem"><span class="dot" style="background:${p.color}"></span><b>${esc(p.party)}</b><span>${esc(p.name)}</span>
+    <span class="tag">${{host:'ホスト',remote:'オンライン',local:'この端末',cpu:'CPU'}[p.kind]}</span>${p.id===myPid?'<span class="tag">あなた</span>':''}
+    ${isHost&&p.kind!=='host'?`<button class="small" style="margin-left:auto" data-kick="${p.id}">外す</button>`:''}</div>`).join('');
+  $('lbPlayers').querySelectorAll('[data-kick]').forEach(b=>b.onclick=()=>{ const id=b.dataset.kick; S.players=S.players.filter(p=>p.id!==id); for(const [k,v] of conns){ if(v.pid===id){ try{v.conn.send({t:'err',msg:'ホストにより退出しました'});v.conn.close()}catch(e){} conns.delete(k);} } commit(); });
+  const st=S.settings;
+  $('lbSettings').innerHTML=`モード：<b>${st.mode==='vs'?'VSモード':'通常モード'}</b>${st.mode==='vs'?`／与党：${st.ruling==='random'?'ランダム':esc((pById(st.ruling)||{}).party||'ランダム')}`:''}／支持の拡散：${st.spread?'ON':'OFF'}`;
+  if(isHost){
+    $('setMode').value=st.mode; $('setSpread').checked=st.spread;
+    $('rowRuling').classList.toggle('hidden',st.mode!=='vs');
+    $('setRuling').innerHTML=`<option value="random">ランダム</option>`+S.players.map(p=>`<option value="${p.id}">${esc(p.party)}（${esc(p.name)}）</option>`).join('');
+    $('setRuling').value=pById(st.ruling)?st.ruling:'random';
+    $('btnStart').disabled=S.players.length<1;
+  }
+  const mp=pById(myPid);
+  if(mp && document.activeElement!==$('lbName') && document.activeElement!==$('lbParty')){ $('lbName').value=mp.name; $('lbParty').value=mp.party; }
+  colorPicker($('lbColors'),mp?mp.color:me.color,c=>updateProfile({color:c}));
+}
+function updateProfile(o){
+  if(o.name!==undefined){me.name=o.name;lsSet('sk_name',o.name)} if(o.party!==undefined){me.party=o.party;lsSet('sk_party',o.party)} if(o.color){me.color=o.color;lsSet('sk_color',o.color)}
+  if(isHost){ const p=pById(myPid); if(p){ if(o.name) p.name=o.name; if(o.party) p.party=o.party; if(o.color) p.color=o.color; } commit(); }
+  else if(hostConn&&hostConn.open) hostConn.send({t:'profile',...o});
+}
+function renderMap(){
+  const CW=50, pad=3, svg=$('map'); const cand=S.speech?S.speech.choices:[], done=S.speech?S.speech.done:[];
+  let h='';
+  for(const pf of PREFS){
+    const seats=prefSeats(pf.n); const tot=Object.values(seats).reduce((a,b)=>a+b,0)||1;
+    let lead=null,lv=-1,tie=false; for(const p of S.players){ const v=seats[p.id]; if(v>lv){lv=v;lead=p;tie=false} else if(v===lv) tie=true; }
+    const share=lv/tot;
+    const fill = (!lead||tie) ? '#cfd6dc' : mix(lead.color, 0.3+0.7*Math.min(1,share));
+    const x=pf.c*CW+pad, y=pf.r*CW+pad, w=pf.w*CW-pad*2, hh=pf.h*CW-pad*2;
+    const txtCol = (!lead||tie) ? '#333' : (lum(lead.color)*0.7+0.3*(1-share) > .55 ? '#222':'#fff');
+    let bx=x+3, bars='';
+    for(const p of S.players){ const bw=(w-6)*seats[p.id]/tot; if(bw>0){ bars+=`<rect x="${bx}" y="${y+hh-8}" width="${bw}" height="5" fill="${p.color}"/>`; bx+=bw; } }
+    const cls=['tile']; if(selPref===pf.n) cls.push('sel'); if(cand.includes(pf.n)) cls.push(done.includes(pf.n)?'done':'cand');
+    const fs = pf.sh.length>=3?11:13;
+    h+=`<g class="${cls.join(' ')}" data-p="${pf.n}"><rect class="bg" x="${x}" y="${y}" width="${w}" height="${hh}" rx="6" fill="${fill}"/>
+      <text x="${x+w/2}" y="${y+hh/2-3}" text-anchor="middle" font-size="${pf.h>1?16:fs}" fill="${txtCol}">${pf.sh}</text>
+      <text x="${x+w/2}" y="${y+hh/2+10}" text-anchor="middle" font-size="10" fill="${txtCol}" opacity=".85">${pf.s}議席</text>
+      <rect x="${x+3}" y="${y+hh-8}" width="${w-6}" height="5" fill="#0002"/>${bars}</g>`;
+  }
+  h+=`<text x="12" y="590" font-size="11" fill="#567">沖縄</text><line x1="0" y1="560" x2="140" y2="560" stroke="#9ab" stroke-dasharray="4 4"/>`;
+  svg.innerHTML=h;
+  svg.querySelectorAll('.tile').forEach(g=>g.onclick=()=>onTile(g.dataset.p));
+}
+function onTile(n){
+  selPref=n;
+  const vp=viewPid();
+  if(S.speech && curPid()===vp && S.speech.choices.includes(n) && !S.speech.done.includes(n) && canControl()){ doAct('speech_at',n); }
+  render();
+}
+function canControl(){ const c=pById(curPid()); if(!c) return false; if(isHost) return c.kind==='host'||c.kind==='local'; return c.id===myPid; }
+function renderGame(){
+  $('gPhase').innerHTML = `${phaseLabel(S.phase)}<small>${S.status==='play'?`ターン ${Math.min(S.phase+1,36)}/36`:'選挙終了'}</small>`;
+  const e=S.event; $('gNews').innerHTML = `📰 本日のニュース：<b>${esc(eventTitle(e))}</b> ${e.id?eventDesc(e):''}`;
+  renderMap(); renderTurn(); renderPlayers(); renderDetail(); renderLog();
+}
+function renderTurn(){
+  const box=$('gTurn'); const c=pById(curPid());
+  if(S.status!=='play'||!c){ box.className='card turnbox'; box.innerHTML=`<h3>選挙戦終了</h3><button class="small" id="btnShowRes" style="margin-top:8px">結果を見る</button>`; $('btnShowRes').onclick=()=>{ $('countModal').classList.remove('hidden'); }; return; }
+  const mine=canControl(), vp=pById(viewPid());
+  const key=S.phase+':'+S.idx+':'+c.id; if(key!==lastTurnKey){ lastTurnKey=key; if(mine) beep(); }
+  box.className='card turnbox'+(mine?' mine':'');
+  let h=`<div class="row" style="justify-content:space-between"><div><span class="muted">手番</span><br><span style="font-size:16px">${pname(c)}</span>${c.online===false?' <span class="tag">オフライン</span>':''}</div>
+    <div class="muted" style="text-align:right">演説数 ${c.scount}/${c.smax}<br>資金 ${yen(c.money)}円</div></div>`;
+  if(mine){
+    h+= isHost && c.kind==='local' ? `<div class="muted" style="margin-top:6px">🎮 ${esc(c.name)}さん、端末を受け取って行動してください</div>`:'';
+    if(S.speech){
+      h+=`<div style="margin-top:10px"><b>演説先を選ぶ</b> <span class="muted">（光っている県をタップ。残り演説数 ${c.scount}）</span></div><div class="cands">`;
+      for(const n of S.speech.choices){ const co=speechCost(n), m=eventMult(c.id,n), dn=S.speech.done.includes(n), ok=!dn && co<=c.scount && co*100<=c.money;
+        h+=`<button data-sp="${n}" class="${dn?'done':''}" ${ok?'':'disabled'}>${PM[n].sh} <span class="muted">${co>1?`消費${co}`:''}${m!==1?` x${m}`:''}</span></button>`; }
+      h+=`</div><button style="margin-top:8px;width:100%" id="btnSpEnd">演説を終える（ターン終了）</button>`;
+    } else {
+      const A=[['speech_start','演説をする',`1回100万円 / 演説力${effPower(c)}×2%`],['practice','演説の練習','演説力 +1'],['supporters','協力者集め',`+${60+11*c.inf}人`],
+               ['fund','資金集め',`+${yen(c.sup)}円`],['sns','SNS活動',`影響力 +${(S.settings.mode==='vs'&&!c.ruling)?2:1}`],['add_speech','演説数を増やす','2000万円で演説数+1']];
+      h+=`<div class="actions">`+A.map(([k,t,s])=>`<button data-a="${k}" ${(k==='speech_start'&&c.money<100)||(k==='add_speech'&&c.money<2000)?'disabled':''}><b>${t}</b><span>${s}</span></button>`).join('')+`</div>`;
+    }
+  } else {
+    h+=`<div class="muted" style="margin-top:8px">${S.speech?'演説中…':'行動を考えています…'}</div>`;
+    if(isHost && c.kind==='remote') h+=`<div class="row" style="margin-top:8px"><button class="small" id="btnSkip">この手番をスキップ</button><button class="small" id="btnToCpu">CPUに交代</button></div>`;
+  }
+  if(vp && vp.id!==c.id) h+=`<div class="muted" style="margin-top:8px">あなた：${pname(vp)}</div>`;
+  box.innerHTML=h;
+  box.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>doAct(b.dataset.a));
+  box.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{ selPref=b.dataset.sp; doAct('speech_at',b.dataset.sp); });
+  if($('btnSpEnd')) $('btnSpEnd').onclick=()=>doAct('speech_end');
+  if($('btnSkip')) $('btnSkip').onclick=()=>{ addLog(`${pname(c)}の手番をスキップしました`,true); endAction(); commit(); };
+  if($('btnToCpu')) $('btnToCpu').onclick=()=>{ c.kind='cpu'; addLog(`${pname(c)}をCPUに交代しました`,true); commit(); };
+}
+function renderPlayers(){
+  const d=S.daily||{}; const cur=curPid();
+  $('gSeatNote').textContent = S.dailyLabel ? `議席予測：${S.dailyLabel}` : '';
+  const ord = S.order.length?S.order.map(pById).filter(Boolean):S.players;
+  $('gBar').innerHTML = ord.map(p=>`<div style="width:${(d[p.id]?d[p.id].t:0)/TOTAL*100}%;background:${p.color}" title="${esc(p.party)}"></div>`).join('')+'<span class="maj" title="過半数233"></span>';
+  $('gPlayers').innerHTML = ord.map(p=>{ const s=d[p.id]||{d:0,p:0,t:0};
+    return `<div class="pc ${p.id===cur?'cur':''}"><span class="dot" style="background:${p.color}"></span>
+    <div><div>${pname(p)} ${p.ruling&&S.settings.mode==='vs'?'<span class="tag ruling">与党</span>':''}${p.kind==='cpu'?'<span class="tag">CPU</span>':''}${p.online===false?'<span class="tag">切断</span>':''}</div>
+    <div class="stats"><span>💰${yen(p.money)}円</span><span>🤝${p.sup}人</span><span>🎤演説力${effPower(p)}</span><span>📢演説数${p.smax}</span><span>📱影響力${p.inf}</span></div></div>
+    <div class="seat">${s.t}<small>小${s.d}／比${s.p}</small></div></div>`; }).join('');
+}
+function renderDetail(){
+  const el=$('gDetail'); if(!selPref){ el.innerHTML='<span class="muted">県を選択すると詳細と支持率調査ができます</span>'; return; }
+  const pf=PM[selPref], seats=prefSeats(pf.n), vp=viewPid();
+  const memo=(surveyMemo[vp]||{})[pf.n];
+  const used=((S.surveyed||{})[vp]||[]).includes(pf.n);
+  el.innerHTML=`<h3>${pf.n}</h3><div class="kv"><span>定数</span><span>${pf.s}議席（小選挙区）</span><span>比例ブロック</span><span>${blockOf(pf.n)}ブロック</span>
+    <span>演説コスト</span><span>演説数${speechCost(pf.n)}・${speechCost(pf.n)*100}万円</span><span>隣接</span><span>${ADJ[pf.n].map(n=>PM[n].sh).join('・')}</span></div>
+    <div style="font-size:12px">${S.players.map(p=>`<span style="margin-right:10px"><span class="dot" style="background:${p.color};width:10px;height:10px"></span> ${esc(p.party)} ${seats[p.id]}議席</span>`).join('')}</div>
+    <div class="row" style="margin-top:8px"><button class="small" id="btnSurvey" ${S.status!=='play'||!vp||used?'disabled':''}>📋 支持率調査（行動消費なし）</button>
+    ${memo?`<span class="muted">前回調査（${memo.label}）：約${memo.v}%・推定${memo.est}議席</span>`:''}</div>`;
+  if($('btnSurvey')) $('btnSurvey').onclick=()=>doSurvey(pf.n);
+}
+function renderLog(){ const el=$('log'); const atBottom=el.scrollHeight-el.scrollTop-el.clientHeight<30;
+  el.innerHTML=S.log.map(l=>`<div class="${l.s?'sys':''}">${l.h}</div>`).join(''); if(atBottom||true) el.scrollTop=el.scrollHeight; }
+
+/* ================= 開票演出 ================= */
+let countTimer=null;
+function runCount(){
+  const F=S.final; $('countModal').classList.remove('hidden'); $('countList').innerHTML=''; $('countResult').innerHTML='';
+  $('btnSkipCount').classList.remove('hidden'); $('btnCloseCount').classList.add('hidden'); $('btnAgain').classList.add('hidden');
+  const items=shuffle(F.byPref); let i=0; clearInterval(countTimer);
+  const step=()=>{ if(i>=items.length){ clearInterval(countTimer); showResult(); return; }
+    const it=items[i++]; let lead=null,lv=-1; S.players.forEach(p=>{if(it.seats[p.id]>lv){lv=it.seats[p.id];lead=p}});
+    const div=document.createElement('div'); div.className='count-item'; div.style.borderLeft=`5px solid ${lead?lead.color:'#999'}`;
+    div.innerHTML=`<b>${it.n}</b>（${it.s}）<br>`+S.players.filter(p=>it.seats[p.id]>0).map(p=>`<span style="color:${p.color}">■</span>${esc(p.party)} ${it.seats[p.id]}`).join(' ');
+    $('countList').prepend(div); };
+  countTimer=setInterval(step,140);
+  $('btnSkipCount').onclick=()=>{ clearInterval(countTimer); while(i<items.length) step(); showResult(); };
+}
+function showResult(){
+  const F=S.final; $('btnSkipCount').classList.add('hidden'); $('btnCloseCount').classList.remove('hidden'); if(isHost) $('btnAgain').classList.remove('hidden');
+  const ps=S.players.slice().sort((a,b)=>F.seats[b.id].t-F.seats[a.id].t);
+  let win;
+  if(F.vs){ win = F.vs.win==='ruling' ? `🎉 与党の勝利！（与党 ${F.vs.ruling}議席 ≧ 過半数${MAJ}）` : `🎉 野党の勝利！（与党 ${F.vs.ruling}議席で過半数割れ）`; }
+  else { const w=pById(F.winner); win=`🎉 祝・当選　${esc(w.party)}（${esc(w.name)}）の勝利！`; }
+  $('countResult').innerHTML=`<div class="winner">${win}</div>
+    <div class="bar465">${ps.map(p=>`<div style="width:${F.seats[p.id].t/TOTAL*100}%;background:${p.color}"></div>`).join('')}<span class="maj"></span></div>
+    <table class="res" style="margin-top:10px"><tr><th>政党</th><th>小選挙区</th><th>比例代表</th><th>総議席</th></tr>
+    ${ps.map(p=>`<tr><td><span class="dot" style="background:${p.color}"></span> ${esc(p.party)}（${esc(p.name)}）${p.ruling&&F.vs?' <span class="tag ruling">与党</span>':''}</td><td>${F.seats[p.id].d}</td><td>${F.seats[p.id].p}</td><td><b>${F.seats[p.id].t}</b></td></tr>`).join('')}</table>
+    <details style="margin-top:8px"><summary class="muted">比例ブロック別</summary><table class="res">${F.prBlocks.map(b=>`<tr><td>${b.n}（${b.s}）</td><td>${S.players.filter(p=>b.won[p.id]).map(p=>`<span style="color:${p.color}">■</span>${esc(p.party)} ${b.won[p.id]}`).join('　')}</td></tr>`).join('')}</table></details>`;
+}
+$('btnCloseCount').onclick=()=>$('countModal').classList.add('hidden');
+$('btnAgain').onclick=()=>{ if(!isHost) return; clearTimeout(cpuTimer); S.status='lobby'; S.final=null; S.order=[]; S.log=[]; S.speech=null; S.players.forEach(p=>{ if(p.online===false && p.kind==='remote') p.gone=true; }); S.players=S.players.filter(p=>!p.gone); commit(); };
+
+/* ================= UI配線 ================= */
+colorPicker($('inColors'),me.color,function pick(c){ me.color=c; colorPicker($('inColors'),c,pick); });
+$('inName').value=me.name; $('inParty').value=me.party;
+const qs=new URLSearchParams(location.search); if(qs.get('room')) $('inCode').value=qs.get('room');
+function readTitle(){
+  me.name=$('inName').value.trim()||'名無し'; me.party=$('inParty').value.trim()||(me.name+'党');
+  lsSet('sk_name',me.name); lsSet('sk_party',me.party); lsSet('sk_color',me.color);
+}
+$('btnHost').onclick=()=>{ readTitle(); startHost(); };
+$('btnJoin').onclick=()=>{ const c=$('inCode').value.trim(); if(c.length<4){ toast('部屋コードを入力してください'); return; } readTitle(); startClient(c); };
+$('btnCopy').onclick=()=>{ const url=location.href.split('?')[0]+'?room='+roomCode; (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast('招待リンクをコピーしました')).catch(()=>toast(url)); };
+let cpuN=0, localN=0;
+const CPU_NAMES=['自由革新党','国民連合','みどりの党','未来創造党','令和改革党','日本維新会','市民の会'];
+function freeColor(){ const used=S.players.map(p=>p.color); return (COLORS.find(c=>!used.includes(c[0]))||COLORS[rnd(COLORS.length)])[0]; }
+$('btnAddCpu').onclick=()=>{ if(S.players.length>=8) return toast('最大8党です'); cpuN++; const used=S.players.map(p=>p.party); const nm=CPU_NAMES.find(n=>!used.includes(n))||('CPU党'+cpuN);
+  S.players.push({id:uid(),cid:'cpu'+uid(),name:'CPU'+cpuN,party:nm,color:freeColor(),kind:'cpu',online:true}); commit(); };
+$('btnAddLocal').onclick=()=>{ if(S.players.length>=8) return toast('最大8党です'); localN++; const nm=prompt('プレイヤー名',`プレイヤー${localN+1}`); if(nm===null) return; const pt=prompt('政党名',`${nm}党`)||`${nm}党`;
+  S.players.push({id:uid(),cid:'local'+uid(),name:nm.slice(0,12)||'名無し',party:pt.slice(0,10),color:freeColor(),kind:'local',online:true}); commit(); };
+$('setMode').onchange=e=>{ S.settings.mode=e.target.value; commit(); };
+$('setRuling').onchange=e=>{ S.settings.ruling=e.target.value; commit(); };
+$('setSpread').onchange=e=>{ S.settings.spread=e.target.checked; commit(); };
+$('btnStart').onclick=()=>{ if(S.players.length<2 && !confirm('1党だけで開始しますか？（CPUを追加できます）')) return; startGame(); commit(); };
+$('lbName').onchange=e=>updateProfile({name:e.target.value.trim().slice(0,12)||'名無し'});
+$('lbParty').onchange=e=>updateProfile({party:e.target.value.trim().slice(0,10)||'無所属党'});
+['btnRules2','btnRules3','btnRules4'].forEach(id=>$(id).onclick=()=>$('rulesModal').classList.remove('hidden'));
+$('btnCloseRules').onclick=()=>$('rulesModal').classList.add('hidden');
+$('chatBtn').onclick=sendChat; $('chatIn').onkeydown=e=>{ if(e.key==='Enter') sendChat(); };
+window.addEventListener('beforeunload',e=>{ if(isHost && S && S.status==='play'){ e.preventDefault(); e.returnValue=''; } });
+</script>
+</body>
+</html>
